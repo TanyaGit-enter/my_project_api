@@ -11,7 +11,7 @@ class CreateToken(Endpoint):
         return self._token
 
     def create_new_token(self):
-        self.response = requests.post(f'{self.url}/authorize', json={"name": "testApiTanya"})
+        self.response = requests.post(f'{self.url}/authorize', json={"name": self.name})
         return self.response.json()['token']
 
     def refresh_token(self):

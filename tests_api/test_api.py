@@ -4,14 +4,17 @@ from utils.data import configure_data, configure_data_with_meme_id
 import allure
 import pytest
 
+false_meme_id = '567k'
+
 
 @allure.feature("Test API token")
 @allure.story("Create session Token")
-def test_api_token(auth_token, get_auth_token):
+def test_api_token_is_alive(auth_token, get_auth_token):
     response = get_auth_token.get_token(auth_token.get_token())
-    if response.status_code == HTTPStatus.UNAUTHORIZED:
+    if response.status_code == HTTPStatus.NOT_FOUND:
         get_auth_token.get_token(auth_token.refresh_token())
     get_auth_token.check_that_status(HTTPStatus.OK)
+    get_auth_token.check_response_token_is_alive()
 
 
 test_data = [
@@ -78,6 +81,7 @@ def test_create_meme_unauthorized(create_meme, text, url, tags, info):
 def test_get_all_memes(auth_header, get_meme):
     get_meme.get_all_memes(auth_header)
     get_meme.check_that_status(HTTPStatus.OK)
+    get_meme.check_response_data_is_not_empty()
 
 
 @allure.feature("Test API")
@@ -100,8 +104,7 @@ def test_get_meme_id(auth_header, get_meme, meme_id):
 @allure.feature("Test API")
 @allure.story("Get meme")
 @allure.title("Get non-existent meme ")
-def test_get_meme_negative_id(auth_header, get_meme):
-    false_meme_id = '567k'
+def test_get_meme_false_id(auth_header, get_meme):
     get_meme.get_meme_id(false_meme_id, auth_header)
     get_meme.check_that_status(HTTPStatus.NOT_FOUND)
 
@@ -134,6 +137,16 @@ def test_put_meme(auth_header, meme_id, put_meme, text, url, tags, info):
     put_meme.check_response_data_is_correct("info", info)
 
 
+@allure.feature("Test API")
+@allure.story("Put meme")
+@allure.title("Put positive meme")
+@pytest.mark.parametrize("text, url, tags, info", test_data_2)
+def test_put_false_meme_id(auth_header, meme_id, put_meme, text, url, tags, info):
+    put_meme.put_meme_id(false_meme_id, payload=configure_data_with_meme_id(meme_id, text, url, tags, info),
+                         headers=auth_header)
+    put_meme.check_that_status(HTTPStatus.NOT_FOUND)
+
+
 test_data_negative_2 = [
     ("love memes changed", None, ["love", "memes", "favorite", "change"],
      {"text1": "love memes", "text2": "memes are my favorite"}),
@@ -146,7 +159,7 @@ test_data_negative_2 = [
 @allure.story("Put meme")
 @allure.title("Put negative meme")
 @pytest.mark.parametrize("text, url, tags, info", test_data_negative_2)
-def test_put_meme_negative_no_parameters(auth_header, meme_id, put_meme, text, url, tags, info):
+def test_put_meme_false_parameters(auth_header, meme_id, put_meme, text, url, tags, info):
     memes_id = ["680K", None, meme_id]
     for meme in memes_id:
         put_meme.put_meme_id(meme_id, payload=configure_data_with_meme_id(meme, text, url, tags, info),
@@ -154,18 +167,14 @@ def test_put_meme_negative_no_parameters(auth_header, meme_id, put_meme, text, u
     put_meme.check_that_status(HTTPStatus.BAD_REQUEST)
 
 
-test_put_data_unauthorized = [
-    ("love memes changed", "https://miro.medium.com/v2/resize:fit:1100/format:webp/1*OkVxoXBTygSKB8K-zbB7uQ.jpeg",
-     ["love", "memes", "favorite", "change"], {"text1": "love memes", "text2": "memes are my favorite"}),
-]
-
-
 @allure.feature("Test API")
 @allure.story("Put meme")
 @allure.title("Put meme for unauthorized user")
-@pytest.mark.parametrize("text, url, tags, info", test_put_data_unauthorized)
-def test_put_meme_unauthorized(meme_id, put_meme, text, url, tags, info):
-    put_meme.put_meme_id(meme_id, payload=configure_data_with_meme_id(meme_id, text, url, tags, info))
+def test_put_meme_unauthorized(meme_id, put_meme):
+    body = {
+        "text": "love memes changed"
+    }
+    put_meme.put_meme_id(meme_id, payload=body)
     put_meme.check_that_status(HTTPStatus.UNAUTHORIZED)
 
 
@@ -175,6 +184,15 @@ def test_put_meme_unauthorized(meme_id, put_meme, text, url, tags, info):
 def test_delete_meme_id(auth_header, delete_meme, meme_id):
     delete_meme.delete_meme_id(meme_id, auth_header)
     delete_meme.check_that_status(HTTPStatus.OK)
+    delete_meme.check_response_delete_token(meme_id)
+
+
+@allure.feature("Test API")
+@allure.story("Delete false meme")
+@allure.title("Delete not existing meme")
+def test_delete_false_meme_id(auth_header, delete_meme):
+    delete_meme.delete_meme_id(false_meme_id, auth_header)
+    delete_meme.check_that_status(HTTPStatus.NOT_FOUND)
 
 
 @allure.feature("Test API")
