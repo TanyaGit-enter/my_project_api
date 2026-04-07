@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from endpoints.endpoint import Endpoint
 import requests
 
@@ -10,10 +12,9 @@ class CreateToken(Endpoint):
             self._token = self.create_new_token()
         return self._token
 
-    def create_new_token(self):
-        self.response = requests.post(f'{self.url}/authorize', json={"name": self.name})
-        return self.response.json()['token']
-
-    def refresh_token(self):
-        self.response = self.create_new_token()
-        return self.response
+    def create_new_token(self, payload=Endpoint.name):
+        self.response = requests.post(f'{self.url}/authorize', json=payload)
+        if self.response.status_code == HTTPStatus.OK:
+            return self.response.json()['token']
+        else:
+            return self.response

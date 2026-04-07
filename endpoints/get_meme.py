@@ -12,7 +12,7 @@ class GetMeme(Endpoint):
             f'{self.url}/meme/{meme_id}',
             headers=headers
         )
-        print(self.response)
+        # print(self.response)
         return self.response
 
     @allure.step('Get all memes')

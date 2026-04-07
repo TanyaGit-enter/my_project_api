@@ -8,13 +8,32 @@ false_meme_id = '567k'
 
 
 @allure.feature("Test API token")
+@allure.story("Create token")
+def test_create_token(auth_token):
+    auth_token.create_new_token()
+    auth_token.check_that_status(HTTPStatus.OK)
+
+
+@allure.feature("Test API token")
+@allure.story("Create negative token")
+def test_create_negative_name_token(auth_token):
+    auth_token.create_new_token(payload={"name": 1111})
+    auth_token.check_that_status(HTTPStatus.BAD_REQUEST)
+
+
+@allure.feature("Test API token")
 @allure.story("Create session Token")
 def test_api_token_is_alive(auth_token, get_auth_token):
-    response = get_auth_token.get_token(auth_token.get_token())
-    if response.status_code == HTTPStatus.NOT_FOUND:
-        get_auth_token.get_token(auth_token.refresh_token())
+    get_auth_token.get_token(auth_token.get_token())
     get_auth_token.check_that_status(HTTPStatus.OK)
     get_auth_token.check_response_token_is_alive()
+
+
+@allure.feature("Test API token")
+@allure.story("Create session token 404")
+def test_api_token_is_alive_not_found(auth_token, get_auth_token):
+    get_auth_token.get_token(token_id='c2Fcb02vuV01111')
+    get_auth_token.check_that_status(HTTPStatus.NOT_FOUND)
 
 
 test_data = [
@@ -181,10 +200,12 @@ def test_put_meme_unauthorized(meme_id, put_meme):
 @allure.feature("Test API")
 @allure.story("Delete meme")
 @allure.title("Delete existing meme")
-def test_delete_meme_id(auth_header, delete_meme, meme_id):
+def test_delete_meme_id(auth_header, delete_meme, get_meme, meme_id):
     delete_meme.delete_meme_id(meme_id, auth_header)
     delete_meme.check_that_status(HTTPStatus.OK)
-    delete_meme.check_response_delete_token(meme_id)
+    delete_meme.check_meme_deleted(meme_id)
+    get_meme.get_meme_id(meme_id, auth_header)
+    get_meme.check_that_status(HTTPStatus.NOT_FOUND)
 
 
 @allure.feature("Test API")
